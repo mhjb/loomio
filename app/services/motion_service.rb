@@ -4,9 +4,13 @@ class MotionService
     actor.ability.authorize! :create, motion
     return false unless motion.valid?
     motion.save!
+    event = Events::NewMotion.publish!(motion)
+
     ThreadSearchService.index! motion.discussion_id
-    DiscussionReader.for(discussion: motion.discussion, user: actor).set_volume_as_required!
-    Events::NewMotion.publish!(motion)
+    reader = DiscussionReader.for(discussion: motion.discussion, user: actor)
+    reader.set_volume_as_required!
+    reader.viewed! motion.created_at
+    event
   end
 
   def self.update(motion:, params:, actor:)
