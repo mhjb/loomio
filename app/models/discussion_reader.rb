@@ -81,7 +81,7 @@ class DiscussionReader < ActiveRecord::Base
     return if user.nil?
     read_at = age_of_last_read_item || discussion.last_activity_at
 
-    if self.last_read_at.nil? or (read_at > self.last_read_at)
+    if self.last_read_at.nil? or (read_at >= self.last_read_at)
       self.last_read_at = read_at
       reset_counts!
     end

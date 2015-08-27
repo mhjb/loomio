@@ -10,7 +10,7 @@ class MotionService
 
     ThreadSearchService.index! motion.discussion_id
     reader.set_volume_as_required!
-    reader.viewed!(motion.created_at + 1.second)
+    reader.viewed! motion.created_at
     event
   end
 
