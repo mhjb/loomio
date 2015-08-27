@@ -4,12 +4,13 @@ class MotionService
     actor.ability.authorize! :create, motion
     return false unless motion.valid?
     motion.save!
+
+    reader = DiscussionReader.for(user: actor, discussion: motion.discussion)
     event = Events::NewMotion.publish!(motion)
 
     ThreadSearchService.index! motion.discussion_id
-    reader = DiscussionReader.for(discussion: motion.discussion, user: actor)
     reader.set_volume_as_required!
-    reader.viewed! motion.created_at
+    reader.viewed!(motion.created_at + 1.second)
     event
   end
 

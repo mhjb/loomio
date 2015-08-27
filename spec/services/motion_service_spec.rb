@@ -5,10 +5,13 @@ describe 'MotionService' do
   let(:discussion) { create :discussion, group: group }
   let(:motion) { build(:motion, discussion: discussion, author: user)}
   let(:user) { create(:user, email_on_participation: true) }
+  let(:another_user) { create :user }
   let(:outcome_string) { double(:outcome_string) }
+  let(:comment) { build(:comment, discussion: discussion) }
 
   before do
     group.add_member! user
+    group.add_member! another_user
   end
 
   describe '#create' do
@@ -19,10 +22,6 @@ describe 'MotionService' do
     end
 
     context "motion is valid" do
-
-      before do
-        MotionService.create(motion: motion, actor: user)
-      end
 
       it "saves the motion" do
         expect(motion).to receive(:save!)
@@ -35,8 +34,8 @@ describe 'MotionService' do
       end
 
       it "enfollows the author" do
-        reader = DiscussionReader.for(user: user, discussion: discussion)
         MotionService.create(motion: motion, actor: user)
+        reader = DiscussionReader.for(user: user, discussion: discussion)
         expect(reader.volume.to_sym).to eq :loud
       end
 
@@ -50,9 +49,12 @@ describe 'MotionService' do
         MotionService.create(motion: motion, actor: user)
       end
 
-      it 'marks the discussion as read' do
+      it 'ensures a discussion stays read' do
+        CommentService.create(comment: comment, actor: another_user)
+        reader = DiscussionReader.for(user: user, discussion: discussion)
+        reader.viewed!
         MotionService.create(motion: motion, actor: user)
-        expect(DiscussionReader.for(user: user, discussion: discussion).last_read_sequence_id).to eq discussion.reload.last_sequence_id
+        expect(reader.reload.last_read_sequence_id).to eq discussion.reload.last_sequence_id
       end
     end
 
